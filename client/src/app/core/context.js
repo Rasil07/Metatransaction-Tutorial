@@ -15,6 +15,7 @@ const initialState = {
   signerContract: null,
   providerContract: null,
   metaMaskEnabled: false,
+  chainId: null,
 };
 
 export const AppContext = createContext(initialState);
@@ -39,8 +40,10 @@ export const AppContextProvider = ({ children }) => {
     const contract = args;
     if (!contract) return;
     console.log({ contract });
-    const chainId = await contract.chainId();
-    console.log({ chainId });
+
+    let chainId = await contract.chainId();
+    chainId = ethers.BigNumber.from(chainId).toNumber();
+    dispatch({ type: ACTIONS.SET_CHAIN_ID, data: chainId });
   }, []);
 
   const getContractBySigner = useCallback(
@@ -49,13 +52,25 @@ export const AppContextProvider = ({ children }) => {
       const signer = args;
       if (!signer) return;
       const contract = await ContractService.getContractBySigner(signer);
-      console.log({ signerContract: contract });
 
       dispatch({ type: ACTIONS.GET_CONTRACT_BY_SIGNER, data: contract });
       return contract;
     },
     [dispatch]
   );
+
+  const getTokenBalance = async (signerContract, signer) => {
+    if (!signerContract) return null;
+    if (!signer) return null;
+
+    let signerAddress = await signer.getAddress();
+
+    let balance = ethers.utils.formatEther(
+      await signerContract.balanceOf(signerAddress)
+    );
+
+    return balance * Math.pow(10, 18);
+  };
 
   const loadMetamask = useCallback(async () => {
     //initializing function for our context
@@ -113,6 +128,7 @@ export const AppContextProvider = ({ children }) => {
         signerContract: state.signerContract,
         providerContract: state.providerContract,
         metaMaskEnabled: state.metaMaskEnabled,
+        getTokenBalance,
       }}
     >
       {children}

@@ -14,6 +14,12 @@ function reducer(state, action) {
         metaMaskEnabled: action.data,
       };
     }
+    case ACTIONS.SET_CHAIN_ID: {
+      return {
+        ...state,
+        chainId: action.data,
+      };
+    }
 
     case ACTIONS.SET_SIGNER: {
       return {
